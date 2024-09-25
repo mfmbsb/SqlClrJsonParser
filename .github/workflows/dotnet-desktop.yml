@@ -55,9 +55,9 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '4.x'  # You can use .NET version 5.x or specify another version
+        dotnet-version: '4.7.2'  # You can use .NET version 5.x or specify another version
 
     - name: Restore dependencies
       run: dotnet restore
