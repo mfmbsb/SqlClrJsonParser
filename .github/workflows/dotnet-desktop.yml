@@ -58,7 +58,6 @@ jobs:
       run: |
         choco install visualstudio2019buildtools --version=16.4.0
         choco install sqlpackage --version=18.6
-        choco install microsoft-build-tools --version=14.0.25420.1
 
     - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v1
