@@ -48,29 +48,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v4  # Updated to v4
 
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '5.x'  # You can use .NET version 5.x or specify another version
+    - name: Install SQL Server Data Tools (SSDT) and Build Tools
+      run: |
+        choco install visualstudio2019buildtools --version=16.4.0
+        choco install sqlpackage --version=19.1.0
+        choco install microsoft-build-tools --version=2015.3
 
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Restore NuGet packages
+      run: nuget restore JsonParser.sln
 
     - name: Build project
-      run: dotnet build --configuration Release
+      run: msbuild JsonParser.sln /p:Configuration=Release
 
     - name: Publish build outputs
-      run: dotnet publish -c Release -o ./output
+      run: |
+        mkdir output
+        copy /Y "$(Build.SourcesDirectory)\JsonParser\bin\Release\*.dll" output\
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v2
       with:
         name: sqlclr-jsonparser-dll
-        path: ./output
-
+        path: output
