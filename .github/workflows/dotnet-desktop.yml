@@ -52,7 +52,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4  # Updated to v4
+      uses: actions/checkout@v4  # Fetches the code
 
     - name: Install SQL Server Data Tools (SSDT) and Build Tools
       run: |
@@ -75,7 +75,7 @@ jobs:
         copy /Y "$(Build.SourcesDirectory)\JsonParser\bin\Release\*.dll" output\
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4  # Use the latest v4 version of upload-artifact
       with:
         name: sqlclr-jsonparser-dll
         path: output
