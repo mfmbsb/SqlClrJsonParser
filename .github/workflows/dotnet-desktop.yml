@@ -72,7 +72,7 @@ jobs:
     - name: Publish build outputs
       run: |
         mkdir output
-        copy /Y "$(Build.SourcesDirectory)\JsonParser\bin\Release\*.dll" output\
+        copy /Y "${{ github.workspace }}\JsonParser\bin\Release\*.dll" output\
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4  # Use the latest v4 version of upload-artifact
