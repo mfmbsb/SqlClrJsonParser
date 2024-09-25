@@ -57,7 +57,7 @@ jobs:
     - name: Install SQL Server Data Tools (SSDT) and Build Tools
       run: |
         choco install visualstudio2019buildtools --version=16.4.0
-        choco install netfx-4.0.3-devpack
+        choco install netfx-4.0.1-devpack
         choco install sqlpackage --version=18.6
 
     - name: Setup MSBuild
