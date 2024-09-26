@@ -79,6 +79,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Functions\JsonParserUDF.cs" />
+    <Compile Include="Functions\FileManagement.cs" />
   </ItemGroup>
   <ItemGroup>
     <PreDeploy Include="Scripts\Script.PreDeployment.sql" />
