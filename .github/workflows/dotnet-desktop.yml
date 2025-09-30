@@ -1,81 +1,50 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
-# This workflow will build, test, sign and package a WPF or Windows Forms desktop application
-# built on .NET Core.
-# To learn how to migrate your existing application to .NET Core,
-# refer to https://docs.microsoft.com/en-us/dotnet/desktop-wpf/migration/convert-project-from-net-framework
-#
-# To configure this workflow:
-#
-# 1. Configure environment variables
-# GitHub sets default environment variables for every workflow run.
-# Replace the variables relative to your project in the "env" section below.
-#
-# 2. Signing
-# Generate a signing certificate in the Windows Application
-# Packaging Project or add an existing signing certificate to the project.
-# Next, use PowerShell to encode the .pfx file using Base64 encoding
-# by running the following Powershell script to generate the output string:
-#
-# $pfx_cert = Get-Content '.\SigningCertificate.pfx' -Encoding Byte
-# [System.Convert]::ToBase64String($pfx_cert) | Out-File 'SigningCertificate_Encoded.txt'
-#
-# Open the output file, SigningCertificate_Encoded.txt, and copy the
-# string inside. Then, add the string to the repo as a GitHub secret
-# and name it "Base64_Encoded_Pfx."
-# For more information on how to configure your signing certificate for
-# this workflow, refer to https://github.com/microsoft/github-actions-for-desktop-apps#signing
-#
-# Finally, add the signing certificate password to the repo as a secret and name it "Pfx_Key".
-# See "Build the Windows Application Packaging project" below to see how the secret is used.
-#
-# For more information on GitHub Actions, refer to https://github.com/features/actions
-# For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
-# refer to https://github.com/microsoft/github-actions-for-desktop-apps
-
-name: Build SQLCLR Json Parser
+name: Build SQLCLR (.sqlproj) for .NET 4.5
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+    branches: [ master, main ]
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4  # Fetches the code
+    - name: Checkout
+      uses: actions/checkout@v4
 
-    - name: Install SQL Server Data Tools (SSDT) and Build Tools
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+
+    - name: Install SSDT build targets (Microsoft.Data.Tools.Msbuild)
       run: |
-        choco install visualstudio2019buildtools --version=16.4.0
-        choco install netfx-4.5.2-devpack
-        choco install sqlpackage --version=18.6
+        nuget install Microsoft.Data.Tools.Msbuild -Version 10.0.61804.210
+        echo "##[group]Copy SSDT build targets"
+        $pkg = Get-ChildItem . -Recurse -Filter Microsoft.Data.Tools.Msbuild.* | Select-Object -First 1
+        $targets = Join-Path $pkg.FullName "build"
+        echo "Using targets from: $targets"
+        echo "##[endgroup]"
+        echo "::set-output name=targets::$targets"
+      shell: powershell
 
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
 
-    - name: Restore NuGet packages
-      run: nuget restore JsonParser.sln
+    - name: Build .sqlproj (Release)
+      run: |
+        msbuild JsonParser.sln /p:Configuration=Release /verbosity:minimal
 
-    - name: Build project
-      run: msbuild JsonParser.sln /p:Configuration=Release
-
-    - name: Publish build outputs
+    - name: Collect outputs
       run: |
         mkdir output
-        Copy-Item "${{ github.workspace }}\JsonParser\bin\Release\*.dll" output\ -Force
-        
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4  # Use the latest v4 version of upload-artifact
+        if (Test-Path "JsonParser\bin\Release") { Copy-Item "JsonParser\bin\Release\*.*" output\ -Force }
+        if (Test-Path "JsonParser\bin\Release\SqlClrJsonParser.dll") { Copy-Item "JsonParser\bin\Release\SqlClrJsonParser.dll" output\ -Force }
+        if (Test-Path "JsonParser\bin\Release\JsonParser.dll") { Copy-Item "JsonParser\bin\Release\JsonParser.dll" output\ -Force }
+        if (Test-Path "JsonParser\bin\Release\JsonParser.dacpac") { Copy-Item "JsonParser\bin\Release\JsonParser.dacpac" output\ -Force }
+        if (Test-Path "JsonParser\Assemblies\Newtonsoft.Json.dll") { Copy-Item "JsonParser\Assemblies\Newtonsoft.Json.dll" output\ -Force }
+      shell: powershell
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
       with:
-        name: sqlclr-jsonparser-dll
+        name: sqlclr-jsonparser-build
         path: output
